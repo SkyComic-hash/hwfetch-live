@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=HWFetch Live
+GenericName=Hardware Monitor
+Comment=Fastfetch-style hardware info with real-time power & telemetry TUI
+Exec=hwfetch-live
+Terminal=true
+Categories=System;Monitor;ConsoleOnly;
+Keywords=hardware;power;battery;gpu;cpu;monitor;telemetry;

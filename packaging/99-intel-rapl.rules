@@ -1,0 +1,12 @@
+# 99-intel-rapl.rules — allow non-root users in the 'power' (or 'wheel')
+# group to read Intel RAPL energy counters (energy_uj), e.g. for hwfetch-live.
+#
+# Install:
+#   sudo cp 99-intel-rapl.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload
+#   sudo udevadm trigger --subsystem-match=powercap
+#
+# Grant ACLs for both groups (setfacl preferred); fall back to chgrp power
+# + chmod g+r on systems without the acl package.
+ACTION=="add", SUBSYSTEM=="powercap", KERNEL=="intel-rapl:*", \
+  RUN+="/bin/sh -c '/usr/bin/setfacl -m g:power:r,g:wheel:r /sys/class/powercap/intel-rapl:*/energy_uj 2>/dev/null || { /usr/bin/chgrp power /sys/class/powercap/intel-rapl:*/energy_uj 2>/dev/null; /usr/bin/chmod g+r /sys/class/powercap/intel-rapl:*/energy_uj 2>/dev/null; }'"

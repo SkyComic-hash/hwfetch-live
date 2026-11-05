@@ -1,0 +1,57 @@
+Screen {
+    background: #0b0e14;
+    color: #e2e8f0;
+}
+
+Header {
+    background: #16121f;
+    color: #ff79c6;
+}
+
+Footer {
+    background: #16121f;
+    color: #8be9fd;
+}
+
+#main {
+    height: 1fr;
+}
+
+#left {
+    width: 42%;
+    border: round #bd93f9;
+    background: #0f0d1a;
+    padding: 1 2;
+    margin: 0 1 1 1;
+}
+
+#right {
+    width: 1fr;
+}
+
+#gpu, #cpu-live, #battery {
+    height: auto;
+    border: round #8be9fd;
+    background: #0d1420;
+    padding: 1 2;
+    margin: 0 1 1 0;
+}
+
+#hogs {
+    height: 10;
+    border: round #ff79c6;
+    background: #170d18;
+    margin: 0 1 1 1;
+}
+
+KillConfirm {
+    align: center middle;
+}
+
+#kill-dialog {
+    width: 64;
+    height: 8;
+    border: round #ff5555;
+    background: #1a0d0d;
+    padding: 1 2;
+}
