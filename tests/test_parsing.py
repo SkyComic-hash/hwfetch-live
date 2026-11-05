@@ -12,7 +12,10 @@ from hwfetch_live.telemetry import (
     RaplReader,
     collect_battery,
     collect_temps,
+    find_gpu,
+    find_gpu_path,
     find_nvidia_gpu,
+    gpu_report,
     nvidia_report,
 )
 
@@ -187,3 +190,98 @@ def test_unknown_runtime_status(tmp_path, monkeypatch):
 
 def test_no_gpu_at_all(tmp_path):
     assert nvidia_report(None) is None
+
+
+# --------------------------------------------------------------------------- #
+# AMD specific integration tests                                              #
+# --------------------------------------------------------------------------- #
+
+def test_amd_rapl_powercap(tmp_path):
+    make_file(tmp_path, "amd-rapl:0/name", "package-0")
+    make_file(tmp_path, "amd-rapl:0/energy_uj", "10000000")
+    make_file(tmp_path, "amd-rapl:0/max_energy_range_uj", "262143000000")
+    reader = RaplReader(str(tmp_path))
+    assert reader.available
+    assert reader.package_power(now=0.0) is None
+    make_file(tmp_path, "amd-rapl:0/energy_uj", "18000000")  # +8 J in 1 s -> 8.0 W
+    assert reader.package_power(now=1.0) == pytest.approx(8.0)
+
+
+def test_amd_energy_hwmon(tmp_path):
+    hw = tmp_path / "hwmon" / "hwmon0"
+    make_file(hw, "name", "amd_energy")
+    make_file(hw, "energy1_input", "5000000")
+    make_file(hw, "energy1_label", "Esocket0")
+    reader = RaplReader(root=str(tmp_path / "empty_powercap"), hwmon_root=str(tmp_path / "hwmon"))
+    assert reader.available
+    assert reader.package_power(now=0.0) is None
+    make_file(hw, "energy1_input", "15000000")  # +10 J in 1 s -> 10.0 W
+    assert reader.package_power(now=1.0) == pytest.approx(10.0)
+
+
+def test_amd_zenpower_direct_watts(tmp_path):
+    hw = tmp_path / "hwmon" / "hwmon1"
+    make_file(hw, "name", "zenpower")
+    make_file(hw, "power1_average", "25000000")  # 25 W
+    reader = RaplReader(root=str(tmp_path / "empty"), hwmon_root=str(tmp_path / "hwmon"))
+    assert reader.available
+    assert reader.package_power() == pytest.approx(25.0)
+
+
+def test_amd_k10temp_thermals_prioritized(tmp_path):
+    # ACPI thermal zone at 50 °C
+    make_file(tmp_path, "thermal/thermal_zone0/type", "acpitz")
+    make_file(tmp_path, "thermal/thermal_zone0/temp", "50000")
+
+    # AMD k10temp in hwmon: Tctl at 68 °C and Tdie at 65 °C
+    hw = tmp_path / "hwmon" / "hwmon0"
+    make_file(hw, "name", "k10temp")
+    make_file(hw, "temp1_input", "68000")
+    make_file(hw, "temp1_label", "Tctl")
+    make_file(hw, "temp2_input", "65000")
+    make_file(hw, "temp2_label", "Tdie")
+
+    zones = collect_temps(root=str(tmp_path / "thermal"), hwmon_root=str(tmp_path / "hwmon"))
+    # Tctl must be sorted first, then Tdie, then other zones
+    assert zones[0] == ("Tctl", 68.0)
+    assert zones[1] == ("Tdie", 65.0)
+    assert zones[2] == ("acpitz", 50.0)
+
+
+def test_find_amd_dgpu_and_report(tmp_path):
+    # Integrated Intel/AMD VGA card
+    make_file(tmp_path, "0000:00:02.0/vendor", "0x8086")
+    make_file(tmp_path, "0000:00:02.0/class", "0x030000")
+    make_file(tmp_path, "0000:00:02.0/boot_vga", "1")
+
+    # Discrete AMD Radeon GPU
+    dev = tmp_path / "0000:03:00.0"
+    make_file(dev, "vendor", "0x1002")
+    make_file(dev, "class", "0x030000")
+    make_file(dev, "boot_vga", "0")
+    make_file(dev, "power/runtime_status", "suspended")
+
+    found = find_gpu(str(tmp_path))
+    assert found is not None
+    assert found["vendor"] == "amd"
+    assert found["path"].endswith("0000:03:00.0")
+
+    # Passive sleep report for AMD dGPU
+    report = gpu_report(str(dev))
+    assert report["state"] == "suspended"
+    assert report["power_w"] == 0.0
+    assert report["vendor"] == "amd"
+
+    # Active report with AMD hwmon and VRAM
+    make_file(dev, "power/runtime_status", "active")
+    make_file(dev, "hwmon/hwmon4/power1_average", "45000000")  # 45 W
+    make_file(dev, "hwmon/hwmon4/temp1_input", "62000")       # 62 °C
+    make_file(dev, "mem_info_vram_used", str(2048 * 1024 * 1024))  # 2048 MiB
+
+    active_report = gpu_report(str(dev))
+    assert active_report["state"] == "active"
+    assert active_report["power_w"] == pytest.approx(45.0)
+    assert active_report["temp_c"] == pytest.approx(62.0)
+    assert active_report["vram_used_mb"] == pytest.approx(2048.0)
+    assert active_report["vendor"] == "amd"
+

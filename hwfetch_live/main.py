@@ -18,7 +18,9 @@ from .telemetry import (
     RaplReader,
     collect_battery,
     collect_temps,
+    find_gpu_path,
     find_nvidia_gpu,
+    gpu_report,
     nvidia_report,
 )
 
@@ -74,7 +76,7 @@ class HWFetchLive(App[None]):
         super().__init__()
         self._rapl = RaplReader()
         self._cpu = CpuUsage()
-        self._gpu_path = find_nvidia_gpu()
+        self._gpu_path = find_gpu_path()
         self._proc_sampler = ProcessSampler(top_n=5)
         self._gpu_interval = GPU_POLL_FAST
         self._gpu_timer = None
@@ -121,7 +123,7 @@ class HWFetchLive(App[None]):
 
     @work(thread=True, exclusive=True, group="gpu")
     def tick_gpu(self) -> None:
-        report = nvidia_report(self._gpu_path)
+        report = gpu_report(self._gpu_path)
         try:
             self.call_from_thread(self.apply_gpu, report)
         except RuntimeError:
@@ -136,7 +138,7 @@ class HWFetchLive(App[None]):
             cpu_line = f"[b #ff79c6]CPU[/] {_bar(cpu_pct)} [#8be9fd]{cpu_pct:5.1f}%[/]"
         if power is None:
             power_line = (
-                "[b #ff79c6]PKG PWR[/] [dim]n/a — RAPL unreadable "
+                "[b #ff79c6]PKG PWR[/] [dim]n/a — RAPL/hwmon unreadable "
                 "(install packaging/99-intel-rapl.rules or run as root)[/dim]"
             )
         else:
@@ -192,17 +194,20 @@ class HWFetchLive(App[None]):
         if report is None:
             text = "[b #ff79c6]dGPU[/] [dim]none detected — iGPU only[/dim]"
         elif report["state"] == "suspended":
+            v_name = report.get("vendor", "dGPU").upper()
             text = (
-                "[b #ff79c6]dGPU[/] [#50fa7b][ SLEEP / 0.0 W ][/]"
+                f"[b #ff79c6]dGPU ({v_name})[/] [#50fa7b][ SLEEP / 0.0 W ][/]"
                 " [dim]runtime_status=suspended (D3cold) — left untouched[/dim]"
             )
         elif report["state"] == "unknown":
-            text = "[b #ff79c6]dGPU[/] [dim]runtime_status unavailable[/dim]"
+            v_name = report.get("vendor", "dGPU").upper()
+            text = f"[b #ff79c6]dGPU ({v_name})[/] [dim]runtime_status unavailable[/dim]"
         else:
+            v_name = report.get("vendor", "dGPU").upper()
             watts = report.get("power_w")
             temp = report.get("temp_c")
             vram = report.get("vram_used_mb")
-            parts = ["[b #ff79c6]dGPU[/] [#f1fa8c][ ACTIVE ][/]"]
+            parts = [f"[b #ff79c6]dGPU ({v_name})[/] [#f1fa8c][ ACTIVE ][/]"]
             parts.append(
                 f"[#f1fa8c]{watts:.2f} W[/]" if watts is not None
                 else "[dim]power n/a[/dim]"

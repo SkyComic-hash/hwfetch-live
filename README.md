@@ -7,7 +7,7 @@
 
 > **Languages:** [English](README.md) | [Русский](README.ru.md)
 
-**hwfetch-live** is a modern, lightweight Terminal User Interface (TUI) hardware and real-time power telemetry monitor. It combines the clean aesthetic of **Fastfetch** with a live system dashboard tailored for Linux laptops — with special focus on **hybrid graphics (Intel iGPU + NVIDIA dGPU)** on **Arch Linux** and Wayland/X11.
+**hwfetch-live** is a modern, lightweight Terminal User Interface (TUI) hardware and real-time power telemetry monitor. It combines the clean aesthetic of **Fastfetch** with a live system dashboard tailored for Linux laptops — with first-class support for **Intel & AMD CPUs** (Ryzen / Zen) and **hybrid graphics (Intel/AMD iGPU + NVIDIA/AMD dGPU)** on **Arch Linux** and Wayland/X11.
 
 Designed with a sleek **Cyberpunk / Dracula neon** palette, it updates in real time (~1 s tick) with zero UI lag and negligible CPU overhead.
 
@@ -17,7 +17,7 @@ Designed with a sleek **Cyberpunk / Dracula neon** palette, it updates in real t
 
 ```
 ┌─ static (fastfetch-style) ─┐┌─ live telemetry (1 s) ────────────┐
-│ OS, kernel, uptime         ││ CPU package power (Intel RAPL)    │
+│ OS, kernel, uptime         ││ CPU package power (Intel/AMD RAPL)│
 │ CPU model + topology       ││ CPU usage bar + core temps        │
 │ RAM capacity / active swap ││ dGPU: [ SLEEP / 0.0 W ] or live   │
 │ battery health / cycles    ││ battery draw (W), status, health  │
@@ -32,10 +32,10 @@ Designed with a sleek **Cyberpunk / Dracula neon** palette, it updates in real t
 
 ## ✨ Features
 
-- 🛡️ **Zero-Wake dGPU Safety**: Passive read of sysfs `power/runtime_status`. If the NVIDIA dGPU is in `suspended` power mode, it displays `[ SLEEP / 0.0 W ]` without triggering PCI bus wake-ups or unnecessary battery drain.
-- ⚡ **Intel RAPL Power Telemetry**: Real-time CPU package wattage consumption parsed from `/sys/class/powercap/intel-rapl`.
+- 🛡️ **Zero-Wake dGPU Safety (NVIDIA & AMD)**: Passive read of sysfs `power/runtime_status`. If the discrete GPU is in `suspended` power mode (D3cold), it displays `[ SLEEP / 0.0 W ]` without triggering PCI bus wake-ups or battery drain.
+- ⚡ **CPU Package Power (Intel & AMD)**: Real-time CPU package wattage consumption parsed from `/sys/class/powercap/*rapl:*` (Intel & AMD Zen via `intel_rapl_msr`) with fallback to AMD `hwmon` (`amd_energy` / `zenpower` / `k10temp`).
 - 🔋 **Battery Telemetry**: Live discharge/charge rate (in Watts), current capacity, health percentage, and cycle count.
-- 🌡️ **Thermals & CPU Load**: Overall CPU percentage bar along with package and individual core temperatures.
+- 🌡️ **Thermals & CPU Load**: Overall CPU percentage bar with package, individual core, and AMD die temperatures (`Tctl` / `Tdie` prioritized).
 - 📊 **Top 5 Power Hogs**: Dynamic process list tracking top resource-consuming tasks by CPU & RAM with persistent delta sampling.
 - 🎯 **Interactive Process Killer**: Press `k` to safely send `SIGTERM` to any highlighted offending process with interactive confirmation dialog.
 - 🚀 **Asynchronous & Non-blocking**: All `/proc` and `/sys` reads run inside isolated background worker threads (`@work(thread=True)`). The UI thread stays at 60 FPS.
@@ -100,9 +100,9 @@ hwfetch-live
 
 ---
 
-## ⚙️ Intel RAPL Permissions Setup
+## ⚙️ Intel & AMD RAPL / Power Permissions Setup
 
-By default on Linux, `/sys/class/powercap/intel-rapl:*/energy_uj` is restricted to `root`. To allow regular users in the `power` or `wheel` group to read energy metrics without `sudo`, install the bundled udev rule:
+By default on Linux, `/sys/class/powercap/*rapl:*/energy_uj` is restricted to `root`. To allow regular users in the `power` or `wheel` group to read energy metrics without `sudo`, install the bundled udev rule:
 
 ```bash
 sudo cp packaging/99-intel-rapl.rules /etc/udev/rules.d/
@@ -110,7 +110,7 @@ sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=powercap
 ```
 
 > [!NOTE]
-> If the udev rule is not installed, `hwfetch-live` will gracefully display `n/a` for RAPL package power without crashing.
+> If the udev rule is not installed, `hwfetch-live` will gracefully display `n/a` for package power or fall back to readable `hwmon` energy counters without crashing.
 
 ---
 
