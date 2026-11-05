@@ -55,3 +55,34 @@ KillConfirm {
     background: #1a0d0d;
     padding: 1 2;
 }
+
+ThemePicker {
+    align: center middle;
+}
+
+#theme-dialog {
+    width: 52;
+    height: 15;
+    border: round #bd93f9;
+    background: #16121f;
+    padding: 1 2;
+}
+
+#theme-title {
+    text-align: center;
+    color: #ff79c6;
+    text-style: bold;
+}
+
+#theme-help {
+    text-align: center;
+    color: #6272a4;
+    margin-bottom: 1;
+}
+
+#theme-options {
+    height: 1fr;
+    background: transparent;
+    border: none;
+}
+

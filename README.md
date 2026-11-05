@@ -37,6 +37,7 @@ Designed with a sleek **Cyberpunk / Dracula neon** palette, it updates in real t
 - 🔋 **Battery Telemetry**: Live discharge/charge rate (in Watts), current capacity, health percentage, and cycle count.
 - 🌡️ **Thermals & CPU Load**: Overall CPU percentage bar with package, individual core, and AMD die temperatures (`Tctl` / `Tdie` prioritized).
 - 📊 **Top 5 Power Hogs**: Dynamic process list tracking top resource-consuming tasks by CPU & RAM with persistent delta sampling.
+- 🎨 **btop-style Theme Switcher**: Press `t` to open an interactive theme picker with real-time live preview across 6 presets (Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Cyberpunk 2077). Settings automatically persist in `~/.config/hwfetch-live/config.json`.
 - 🎯 **Interactive Process Killer**: Press `k` to safely send `SIGTERM` to any highlighted offending process with interactive confirmation dialog.
 - 🚀 **Asynchronous & Non-blocking**: All `/proc` and `/sys` reads run inside isolated background worker threads (`@work(thread=True)`). The UI thread stays at 60 FPS.
 
@@ -47,9 +48,27 @@ Designed with a sleek **Cyberpunk / Dracula neon** palette, it updates in real t
 | Key | Action |
 |:---|:---|
 | <kbd>q</kbd>, <kbd>Ctrl+C</kbd> | Graceful exit |
+| <kbd>t</kbd> | Open btop-style **Theme Switcher** modal (live preview & auto-save) |
 | <kbd>k</kbd> | Open confirmation dialog to terminate (`SIGTERM`) selected process |
 | <kbd>p</kbd> | Toggle discrete GPU poll interval between **1 s** (fast) and **5 s** (power-save) |
 | <kbd>Tab</kbd> / <kbd>↑</kbd> <kbd>↓</kbd> | Navigate process list |
+
+---
+
+## 🎨 Themes
+
+hwfetch-live includes 6 built-in themes inspired by modern terminal setups:
+
+| Theme | Aesthetic | Accents |
+|:---|:---|:---|
+| **🧛 Dracula Neon** *(default)* | Classic dark vampire palette | Pink `#ff79c6`, Purple `#bd93f9`, Cyan `#8be9fd` |
+| **❄️ Nord Frost** | Arctic blue-gray minimalism | Frost Blue `#88c0d0`, Green `#a3be8c`, Yellow `#ebcb8b` |
+| **☕ Catppuccin Mocha** | Soothing pastel dark | Mauve `#cba6f7`, Pink `#f5c2e7`, Blue `#89b4fa` |
+| **🍂 Gruvbox Dark** | Warm retro groove | Yellow `#fabd2f`, Orange `#fe8019`, Aqua `#8ec07c` |
+| **🌃 Tokyo Night** | Deep neon Tokyo city vibes | Blue `#7aa2f7`, Purple `#bb9af7`, Cyan `#7dcfff` |
+| **⚡ Cyberpunk 2077** | High-contrast neon dystopia | Acid Yellow `#fcee0a`, Cyber Cyan `#00f0ff`, Hot Red `#ff003c` |
+
+Press <kbd>t</kbd> anywhere inside the TUI to open the theme menu. Navigating with <kbd>↑</kbd> / <kbd>↓</kbd> provides **instant live preview**; pressing <kbd>Enter</kbd> saves your selection permanently to `~/.config/hwfetch-live/config.json`.
 
 ---
 

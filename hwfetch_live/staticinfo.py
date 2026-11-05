@@ -5,6 +5,11 @@ from __future__ import annotations
 import platform
 import socket
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .themes import Theme
+
 try:
     import psutil
 except ImportError:  # pragma: no cover
@@ -68,11 +73,15 @@ def _human_uptime(seconds: float) -> str:
     return f"{minutes}m"
 
 
-def _row(label: str, value: str) -> str:
-    return f"[b #bd93f9]{label:<9}[/] {value}"
+def _row(label: str, value: str, label_color: str = "#bd93f9") -> str:
+    return f"[b {label_color}]{label:<9}[/] {value}"
 
 
-def static_info_lines(ps_root: str = "/sys/class/power_supply") -> str:
+def static_info_lines(
+    ps_root: str = "/sys/class/power_supply",
+    theme: Theme | None = None,
+) -> str:
+    lbl_color = theme.accent_alt if theme else "#bd93f9"
     release = _os_release()
     mem = _meminfo_kib()
 
@@ -96,14 +105,14 @@ def static_info_lines(ps_root: str = "/sys/class/power_supply") -> str:
         swap_s = "none"
 
     lines = [
-        _row("OS", f"{release.get('PRETTY_NAME', 'Linux')} ({platform.machine()})"),
-        _row("Host", socket.gethostname()),
-        _row("Kernel", platform.release()),
-        _row("Uptime", _human_uptime(u) if (u := _uptime_seconds()) is not None else "?"),
-        _row("CPU", _cpu_model()),
-        _row("Cores", f"{cores}C / {threads}T"),
-        _row("Memory", ram_s),
-        _row("Swap", swap_s),
+        _row("OS", f"{release.get('PRETTY_NAME', 'Linux')} ({platform.machine()})", lbl_color),
+        _row("Host", socket.gethostname(), lbl_color),
+        _row("Kernel", platform.release(), lbl_color),
+        _row("Uptime", _human_uptime(u) if (u := _uptime_seconds()) is not None else "?", lbl_color),
+        _row("CPU", _cpu_model(), lbl_color),
+        _row("Cores", f"{cores}C / {threads}T", lbl_color),
+        _row("Memory", ram_s, lbl_color),
+        _row("Swap", swap_s, lbl_color),
     ]
 
     bat = collect_battery(ps_root)
@@ -114,6 +123,6 @@ def static_info_lines(ps_root: str = "/sys/class/power_supply") -> str:
         detail = f"{health_s} health"
         if cycles is not None:
             detail += f" · {cycles} cycles"
-        lines.append(_row("Battery", detail))
+        lines.append(_row("Battery", detail, lbl_color))
 
     return "\n".join(lines)
