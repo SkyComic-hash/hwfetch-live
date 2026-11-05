@@ -32,6 +32,9 @@ install: build
 ## Source tarball for makepkg
 pkg-tarball:
 	tar --transform 's,^\.,hwfetch-live-$(PKGVER),' \
+	    --exclude='packaging/src' --exclude='packaging/pkg' \
+	    --exclude='packaging/hwfetch-live' --exclude='packaging/*.pkg.tar.*' \
+	    --exclude='packaging/*.tar.*' \
 	    -czf hwfetch-live-$(PKGVER).tar.gz \
 	    ./pyproject.toml ./LICENSE ./README.md ./hwfetch_live ./packaging
 
@@ -42,4 +45,4 @@ pkg: pkg-tarball
 
 clean:
 	rm -rf build dist src pkg hwfetch_live.egg-info $(VENV) \
-	       hwfetch-live-$(PKGVER).tar.gz .pytest_cache
+	       hwfetch-live-$(PKGVER).tar.gz .pytest_cache PKGBUILD

@@ -1,4 +1,4 @@
-# Maintainer: hwfetch-live contributors
+# Maintainer: SkyComic-hash <skygamechunnal@gmail.com>
 pkgname=hwfetch-live
 pkgver=0.1.0
 pkgrel=1
@@ -11,28 +11,19 @@ makedepends=('python' 'python-pip')
 provides=('hwfetch-live')
 conflicts=('hwfetch-live')
 source=("$pkgname-$pkgver.tar.gz")
-sha256sums=('c167e952a5098097015f276674fea79299e4d9561a119f1fbea0aff5169a335d')
-# regenerate after `make pkg-tarball` with:  makepkg -g >> PKGBUILD && updpkgsums
-
-prepare() {
-  # PyInstaller needs the spec to find its entrypoint relative to itself;
-  # the tree layout inside the tarball already matches the repo.
-  true
-}
+sha256sums=('SKIP')
 
 build() {
   cd "$pkgname-$pkgver"
-  # Isolated venv: the resulting binary is self-contained, so no python-*
-  # runtime deps are pulled into the package.
   python -m venv "$srcdir/_build_venv"
   "$srcdir/_build_venv/bin/pip" --quiet install . pyinstaller
   "$srcdir/_build_venv/bin/pyinstaller" --noconfirm --clean packaging/hwfetch-live.spec
 }
 
 package() {
-    install -Dm755 "$srcdir/../hwfetch-live" "$pkgdir/usr/bin/hwfetch-live"
-
-    if [ -f "$srcdir/../99-intel-rapl.rules" ]; then
-        install -Dm644 "$srcdir/../99-intel-rapl.rules" "$pkgdir/usr/lib/udev/rules.d/99-intel-rapl.rules"
-    fi
+  cd "$pkgname-$pkgver"
+  install -Dm755 dist/hwfetch-live "$pkgdir/usr/bin/hwfetch-live"
+  install -Dm644 packaging/hwfetch-live.desktop "$pkgdir/usr/share/applications/hwfetch-live.desktop"
+  install -Dm644 packaging/99-intel-rapl.rules "$pkgdir/usr/lib/udev/rules.d/99-intel-rapl.rules"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
